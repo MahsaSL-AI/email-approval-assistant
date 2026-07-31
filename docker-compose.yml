@@ -1,0 +1,46 @@
+services:
+  app:
+    build: .
+    environment:
+      APP_ENV: development
+      DATABASE_URL: postgresql+psycopg://email_assistant:email_assistant@db:5432/email_assistant
+      IMAP_HOST: ${IMAP_HOST:-imap.gmail.com}
+      IMAP_PORT: ${IMAP_PORT:-993}
+      IMAP_USE_SSL: ${IMAP_USE_SSL:-true}
+      EMAIL_USERNAME: ${EMAIL_USERNAME:-}
+      EMAIL_APP_PASSWORD: ${EMAIL_APP_PASSWORD:-}
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USE_TLS: ${SMTP_USE_TLS:-true}
+      AI_PROVIDER: ${AI_PROVIDER:-fake}
+      AI_API_KEY: ${AI_API_KEY:-}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_OPERATOR_ID: ${TELEGRAM_OPERATOR_ID:-}
+    ports:
+      - "8001:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-email_assistant}
+      POSTGRES_USER: ${POSTGRES_USER:-email_assistant}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-email_assistant}
+    ports:
+      - "${POSTGRES_PORT:-15433}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-email_assistant} -d ${POSTGRES_DB:-email_assistant}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres_data:
