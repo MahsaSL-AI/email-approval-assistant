@@ -5,7 +5,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.core.config import get_settings
 from app.db.session import SessionLocal
-from app.providers.email_analysis import FakeEmailAnalyzer
+from app.providers.factory import (
+    UnsupportedEmailAnalyzerError,
+    build_email_analyzer,
+)
 from app.providers.imap import GmailImapClient, InboxConnectionError
 from app.repositories.email import EmailRepository
 from app.schemas.inbox import InboxSyncResponse
@@ -29,6 +32,14 @@ def get_inbox_sync_service() -> Generator[InboxSyncService, None, None]:
             detail="Email integration is not configured.",
         )
 
+    try:
+        analyzer = build_email_analyzer(settings)
+    except UnsupportedEmailAnalyzerError as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="AI analysis is not configured.",
+        ) from error
+
     session = SessionLocal()
     try:
         inbox = GmailImapClient(
@@ -39,7 +50,7 @@ def get_inbox_sync_service() -> Generator[InboxSyncService, None, None]:
         )
         ingestion = EmailIngestionService(
             EmailRepository(session),
-            FakeEmailAnalyzer(),
+            analyzer,
         )
         yield InboxSyncService(
             inbox=inbox,

@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     smtp_use_tls: bool = True
 
     ai_provider: str = "fake"
+    ai_model: str = "openai/gpt-oss-20b:free"
+    ai_base_url: str = "https://openrouter.ai/api/v1"
+    ai_timeout_seconds: float = 45.0
     ai_api_key: SecretStr | None = None
 
     telegram_bot_token: SecretStr | None = None
