@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 
+from app.api.routes.emails import router as emails_router
 from app.api.routes.health import router as health_router
 from app.api.routes.inbox import router as inbox_router
 from app.core.config import get_settings
@@ -13,6 +14,7 @@ def create_app() -> FastAPI:
     )
     application.include_router(health_router)
     application.include_router(inbox_router)
+    application.include_router(emails_router)
     return application
 
 
