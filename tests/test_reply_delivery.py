@@ -9,6 +9,7 @@ from app.services.reply_delivery import (
     ReplyDeliveryAmbiguousError,
     ReplyDeliveryFailed,
     ReplyDeliveryService,
+    ReplySenderAccountMismatch,
 )
 
 EMAIL_ID = UUID("11111111-1111-4111-8111-111111111111")
@@ -120,6 +121,20 @@ def test_reserved_message_id_blocks_ambiguous_retry() -> None:
         delivery.send(EMAIL_ID)
 
     assert repository.commits == 0
+
+
+def test_email_from_another_monitored_account_is_never_sent() -> None:
+    email = make_email()
+    email.recipient = "old-inbox@example.test"
+    provider = RecordingProvider()
+    delivery, repository = service(email, provider)
+
+    with pytest.raises(ReplySenderAccountMismatch, match="different monitored"):
+        delivery.send(EMAIL_ID)
+
+    assert provider.outbound is None
+    assert repository.commits == 0
+    assert email.suggested_reply.smtp_message_id is None
 
 
 def test_existing_reply_prefix_is_not_duplicated() -> None:

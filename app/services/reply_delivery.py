@@ -23,6 +23,10 @@ class ReplyDeliveryAmbiguousError(RuntimeError):
     """Raised when a prior attempt may already have reached the recipient."""
 
 
+class ReplySenderAccountMismatch(RuntimeError):
+    """Raised when a stored email belongs to a different monitored inbox."""
+
+
 class ReplyDeliveryService:
     def __init__(
         self,
@@ -38,6 +42,14 @@ class ReplyDeliveryService:
         email = self._repository.get_email(email_id)
         if email is None or email.suggested_reply is None:
             raise ReplyNotFoundError(f"Reply for email {email_id} was not found.")
+
+        if (
+            email.recipient.strip().casefold()
+            != self._sender_address.strip().casefold()
+        ):
+            raise ReplySenderAccountMismatch(
+                "This email belongs to a different monitored account."
+            )
 
         reply = email.suggested_reply
         ensure_reply_can_be_sent(reply.status)

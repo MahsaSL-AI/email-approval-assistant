@@ -208,6 +208,8 @@ workflow. The API keeps these operations separate for inspection and testing.
 
 - External Gmail Message-ID is a durable ingestion idempotency key.
 - SMTP Message-ID is reserved before delivery to prevent duplicate sends.
+- Stored email ownership must match the active monitored inbox, so records from
+  a previous Gmail account cannot be sent after credential rotation.
 - Telegram update offsets survive restarts.
 - One persistent edit session is tracked per authorized operator.
 - Unauthorized Telegram users and chats are rejected.

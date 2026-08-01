@@ -14,6 +14,7 @@ from app.services.reply_delivery import (
     ReplyDeliveryAmbiguousError,
     ReplyDeliveryFailed,
     ReplyDeliveryService,
+    ReplySenderAccountMismatch,
 )
 from app.services.reply_workflow import ReplyNotFoundError
 
@@ -58,7 +59,11 @@ def send_reply(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Reply was not found.",
         ) from error
-    except (InvalidReplyTransition, ReplyDeliveryAmbiguousError) as error:
+    except (
+        InvalidReplyTransition,
+        ReplyDeliveryAmbiguousError,
+        ReplySenderAccountMismatch,
+    ) as error:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=str(error),

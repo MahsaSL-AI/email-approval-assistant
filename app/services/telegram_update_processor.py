@@ -6,6 +6,7 @@ from app.providers.telegram import TelegramProviderError
 from app.services.reply_delivery import (
     ReplyDeliveryAmbiguousError,
     ReplyDeliveryFailed,
+    ReplySenderAccountMismatch,
 )
 from app.services.reply_workflow import EmptyReplyError, ReplyNotFoundError
 from app.services.telegram_actions import (
@@ -99,6 +100,7 @@ class TelegramUpdateProcessor:
             EmptyReplyError,
             ReplyDeliveryAmbiguousError,
             ReplyDeliveryFailed,
+            ReplySenderAccountMismatch,
         ) as error:
             safe_message = str(error) or "Action could not be completed."
             self._best_effort_callback_error(update, safe_message)
