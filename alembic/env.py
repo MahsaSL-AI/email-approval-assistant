@@ -5,7 +5,13 @@ from sqlalchemy import engine_from_config, pool
 from alembic import context
 from app.core.config import get_settings
 from app.db.base import Base
-from app.models import EmailAnalysis, EmailMessage, ProcessingLog, SuggestedReply
+from app.models import (
+    EmailAnalysis,
+    EmailMessage,
+    ProcessingLog,
+    SuggestedReply,
+    TelegramEditSession,
+)
 
 config = context.config
 
@@ -16,7 +22,13 @@ config.set_main_option("sqlalchemy.url", get_settings().database_url)
 target_metadata = Base.metadata
 
 # Keep model imports visible to Alembic's metadata discovery.
-_MODELS = (EmailMessage, EmailAnalysis, SuggestedReply, ProcessingLog)
+_MODELS = (
+    EmailMessage,
+    EmailAnalysis,
+    SuggestedReply,
+    ProcessingLog,
+    TelegramEditSession,
+)
 
 
 def run_migrations_offline() -> None:

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Any, Protocol
 from uuid import UUID
 
 from app.domain.reply_views import ReplyView
@@ -10,7 +10,11 @@ class UnauthorizedTelegramOperator(PermissionError):
 
 
 class InvalidTelegramAction(ValueError):
-    """Raised when callback data or an edit command is malformed."""
+    """Raised when callback data or an edit message is malformed."""
+
+
+class NoActiveEditSession(InvalidTelegramAction):
+    """Raised when ordinary text is received outside an editing conversation."""
 
 
 class ReplyDecisions(Protocol):
@@ -25,8 +29,29 @@ class EditSessions(Protocol):
     def begin(self, email_id: UUID) -> ReplyView: ...
 
 
+class TelegramEditTracker(Protocol):
+    def start(self, *, operator_id: int, email_id: UUID) -> None: ...
+
+    def current_email_id(self, *, operator_id: int) -> UUID | None: ...
+
+    def clear(self, *, operator_id: int) -> None: ...
+
+
 class ReplyDelivery(Protocol):
     def send(self, email_id: UUID) -> ReplyView: ...
+
+
+class _NullTelegramEditTracker:
+    """Keeps older callers compatible; production injects persistent storage."""
+
+    def start(self, *, operator_id: int, email_id: UUID) -> None:
+        return None
+
+    def current_email_id(self, *, operator_id: int) -> UUID | None:
+        return None
+
+    def clear(self, *, operator_id: int) -> None:
+        return None
 
 
 @dataclass(frozen=True, slots=True)
@@ -34,6 +59,7 @@ class TelegramActionResult:
     callback_query_id: str | None
     message: str
     status: str
+    reply_markup: dict[str, Any] | None = None
 
 
 class TelegramActionService:
@@ -44,11 +70,13 @@ class TelegramActionService:
         decisions: ReplyDecisions,
         edit_sessions: EditSessions,
         delivery: ReplyDelivery,
+        edit_tracker: TelegramEditTracker | None = None,
     ) -> None:
         self._operator_id = operator_id
         self._decisions = decisions
         self._edit_sessions = edit_sessions
         self._delivery = delivery
+        self._edit_tracker = edit_tracker or _NullTelegramEditTracker()
 
     def handle_callback(self, update: dict) -> TelegramActionResult:
         callback = update.get("callback_query")
@@ -64,18 +92,64 @@ class TelegramActionService:
 
         if action == "approve":
             self._decisions.approve(email_id)
+            self._edit_tracker.clear(operator_id=self._operator_id)
             result = self._delivery.send(email_id)
-            message = "Reply approved and sent."
+            message = "پاسخ تأیید و ارسال شد."
         elif action == "reject":
             result = self._decisions.reject(email_id)
-            message = "Reply rejected."
+            self._edit_tracker.clear(operator_id=self._operator_id)
+            message = "پاسخ رد شد."
         else:
             result = self._edit_sessions.begin(email_id)
-            message = f"Editing started. Send: /edit {email_id} your revised reply"
+            self._edit_tracker.start(
+                operator_id=self._operator_id,
+                email_id=email_id,
+            )
+            message = "متن پیشنهادی جدید را بنویسید و ارسال کنید."
 
         return TelegramActionResult(callback_id, message, result.status)
 
+    def handle_text_message(self, update: dict) -> TelegramActionResult:
+        message = update.get("message")
+        if not isinstance(message, dict):
+            raise InvalidTelegramAction("Telegram update has no message.")
+        self._authorize(message.get("from"), message)
+
+        text = message.get("text")
+        if not isinstance(text, str) or not text.strip():
+            raise InvalidTelegramAction("متن پاسخ نمی‌تواند خالی باشد.")
+        email_id = self._edit_tracker.current_email_id(operator_id=self._operator_id)
+        if email_id is None:
+            raise NoActiveEditSession("No Telegram edit session is active.")
+
+        revised_text = text.strip()
+        result = self._decisions.edit(email_id, revised_text)
+        return TelegramActionResult(
+            callback_query_id=None,
+            message=(
+                "متن پیشنهادی جدید:\n\n"
+                f"{revised_text}\n\n"
+                "اگر مناسب است تأیید کنید؛ در غیر این صورت دوباره ویرایش کنید."
+            ),
+            status=result.status,
+            reply_markup={
+                "inline_keyboard": [
+                    [
+                        {
+                            "text": "✅ تأیید و ارسال",
+                            "callback_data": f"approve:{email_id}",
+                        },
+                        {
+                            "text": "✏️ ویرایش دوباره",
+                            "callback_data": f"edit:{email_id}",
+                        },
+                    ]
+                ]
+            },
+        )
+
     def handle_edit_command(self, update: dict) -> TelegramActionResult:
+        """Legacy command retained for compatibility with existing clients."""
         message = update.get("message")
         if not isinstance(message, dict):
             raise InvalidTelegramAction("Telegram update has no message.")

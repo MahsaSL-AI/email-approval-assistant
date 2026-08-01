@@ -8,6 +8,7 @@ from app.models.email import (
     ProcessingLogLevel,
     SuggestedReply,
 )
+from app.models.telegram import TelegramEditSession
 
 __all__ = [
     "EmailAnalysis",
@@ -18,4 +19,5 @@ __all__ = [
     "ProcessingLog",
     "ProcessingLogLevel",
     "SuggestedReply",
+    "TelegramEditSession",
 ]

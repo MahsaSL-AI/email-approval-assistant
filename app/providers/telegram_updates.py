@@ -61,6 +61,27 @@ class TelegramUpdateProvider:
             raise TelegramProviderError("Telegram returned an invalid message result.")
         return result["message_id"]
 
+    def send_message(
+        self,
+        *,
+        chat_id: int,
+        text: str,
+        reply_markup: dict[str, Any],
+    ) -> int:
+        result = self._request(
+            "sendMessage",
+            {
+                "chat_id": chat_id,
+                "text": text,
+                "reply_markup": reply_markup,
+            },
+        )
+        if not isinstance(result, dict) or not isinstance(
+            result.get("message_id"), int
+        ):
+            raise TelegramProviderError("Telegram returned an invalid message result.")
+        return result["message_id"]
+
     def _request(self, method: str, payload: dict[str, Any]) -> Any:
         try:
             if self._client is None:

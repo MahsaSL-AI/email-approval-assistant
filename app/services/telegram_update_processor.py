@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Any, Protocol
 
 from app.domain.reply_state import InvalidReplyTransition
 from app.providers.telegram import TelegramProviderError
@@ -10,6 +10,7 @@ from app.services.reply_delivery import (
 from app.services.reply_workflow import EmptyReplyError, ReplyNotFoundError
 from app.services.telegram_actions import (
     InvalidTelegramAction,
+    NoActiveEditSession,
     TelegramActionResult,
     TelegramActionService,
     UnauthorizedTelegramOperator,
@@ -26,6 +27,14 @@ class TelegramUpdateResponder(Protocol):
     ) -> None: ...
 
     def send_text(self, *, chat_id: int, text: str) -> int: ...
+
+    def send_message(
+        self,
+        *,
+        chat_id: int,
+        text: str,
+        reply_markup: dict[str, Any],
+    ) -> int: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -70,6 +79,15 @@ class TelegramUpdateProcessor:
                 self._best_effort_send("Email approval bot is connected and ready.")
                 return TelegramUpdateOutcome(update_id, True, "ready")
 
+            if isinstance(text, str) and not text.startswith("/"):
+                handler = getattr(self._actions, "handle_text_message", None)
+                if callable(handler):
+                    result = handler(update)
+                    self._send_result(result)
+                    return TelegramUpdateOutcome(update_id, True, result.status)
+
+            return TelegramUpdateOutcome(update_id, False, "ignored")
+        except NoActiveEditSession:
             return TelegramUpdateOutcome(update_id, False, "ignored")
         except UnauthorizedTelegramOperator:
             self._best_effort_callback_error(update, "Unauthorized action.")
@@ -106,7 +124,7 @@ class TelegramUpdateProcessor:
             return
 
     def _send_result(self, result: TelegramActionResult) -> None:
-        self._best_effort_send(result.message)
+        self._best_effort_send(result.message, result.reply_markup)
 
     def _authorize_start(self, message: object) -> None:
         if not isinstance(message, dict):
@@ -132,8 +150,21 @@ class TelegramUpdateProcessor:
         except TelegramProviderError:
             return
 
-    def _best_effort_send(self, message: str) -> None:
+    def _best_effort_send(
+        self,
+        message: str,
+        reply_markup: dict[str, Any] | None = None,
+    ) -> None:
         try:
+            if reply_markup is not None:
+                sender = getattr(self._responder, "send_message", None)
+                if callable(sender):
+                    sender(
+                        chat_id=self._operator_id,
+                        text=message,
+                        reply_markup=reply_markup,
+                    )
+                    return
             self._responder.send_text(chat_id=self._operator_id, text=message)
         except TelegramProviderError:
             return

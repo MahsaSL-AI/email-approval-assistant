@@ -1,5 +1,6 @@
 import argparse
 import sys
+import time
 from pathlib import Path
 
 from app.core.config import get_settings
@@ -8,6 +9,9 @@ from app.providers.smtp import GmailSmtpProvider
 from app.providers.telegram import TelegramProviderError
 from app.providers.telegram_updates import TelegramUpdateProvider
 from app.repositories.reply_workflow import ReplyWorkflowRepository
+from app.repositories.telegram_edit_session import (
+    TelegramEditSessionRepository,
+)
 from app.services.reply_delivery import ReplyDeliveryService
 from app.services.reply_edit_session import ReplyEditSessionService
 from app.services.reply_workflow import ReplyWorkflowService
@@ -45,10 +49,16 @@ def run(*, once: bool = False, offset_path: Path = DEFAULT_OFFSET_PATH) -> None:
 
     while True:
         offset = offset_store.load()
-        batch = updates.get_updates(
-            offset=offset,
-            poll_timeout_seconds=0 if once else 25,
-        )
+        try:
+            batch = updates.get_updates(
+                offset=offset,
+                poll_timeout_seconds=0 if once else 25,
+            )
+        except TelegramProviderError:
+            if once:
+                raise
+            time.sleep(3)
+            continue
         for update in sorted(batch, key=lambda item: item.get("update_id", -1)):
             update_id = update.get("update_id")
             if not isinstance(update_id, int):
@@ -99,6 +109,7 @@ def _build_processor(
         decisions=decisions,
         edit_sessions=edit_sessions,
         delivery=delivery,
+        edit_tracker=TelegramEditSessionRepository(session),
     )
     return TelegramUpdateProcessor(
         operator_id=operator_id,
