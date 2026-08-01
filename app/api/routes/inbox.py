@@ -10,10 +10,14 @@ from app.providers.factory import (
     build_email_analyzer,
 )
 from app.providers.imap import GmailImapClient, InboxConnectionError
+from app.providers.telegram import TelegramBotApiProvider
 from app.repositories.email import EmailRepository
+from app.repositories.email_notification import EmailNotificationRepository
 from app.schemas.inbox import InboxSyncResponse
 from app.services.email_ingestion import EmailIngestionService
 from app.services.inbox_sync import InboxSyncService
+from app.services.stored_telegram_notification import StoredTelegramNotificationService
+from app.services.telegram_notification import TelegramNotificationService
 
 router = APIRouter(prefix="/api/emails", tags=["emails"])
 
@@ -30,6 +34,18 @@ def get_inbox_sync_service() -> Generator[InboxSyncService, None, None]:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Email integration is not configured.",
+        )
+
+    bot_token = (
+        settings.telegram_bot_token.get_secret_value()
+        if settings.telegram_bot_token
+        else None
+    )
+    operator_id = settings.telegram_operator_id
+    if not bot_token or operator_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Telegram integration is not configured.",
         )
 
     try:
@@ -52,10 +68,18 @@ def get_inbox_sync_service() -> Generator[InboxSyncService, None, None]:
             EmailRepository(session),
             analyzer,
         )
+        notification = StoredTelegramNotificationService(
+            EmailNotificationRepository(session),
+            TelegramNotificationService(
+                TelegramBotApiProvider(bot_token=bot_token),
+                operator_id,
+            ),
+        )
         yield InboxSyncService(
             inbox=inbox,
             ingestion=ingestion,
             monitored_address=username,
+            notification=notification,
         )
     finally:
         session.close()

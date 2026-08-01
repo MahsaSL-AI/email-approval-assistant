@@ -22,6 +22,29 @@ services:
       db:
         condition: service_healthy
 
+  email-worker:
+    profiles: ["automation"]
+    build: .
+    command: ["python", "scripts/run_email_worker.py"]
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://email_assistant:email_assistant@db:5432/email_assistant
+    depends_on:
+      db:
+        condition: service_healthy
+
+  telegram-bot:
+    profiles: ["automation"]
+    build: .
+    command: ["python", "scripts/run_telegram_bot.py"]
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://email_assistant:email_assistant@db:5432/email_assistant
+    volumes:
+      - telegram_runtime:/app/.runtime
+    depends_on:
+      db:
+        condition: service_healthy
   db:
     image: postgres:16
     environment:
@@ -44,3 +67,4 @@ services:
 
 volumes:
   postgres_data:
+  telegram_runtime:

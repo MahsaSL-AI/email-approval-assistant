@@ -1,8 +1,15 @@
 from dataclasses import dataclass
+from typing import Protocol
+from uuid import UUID
 
 from app.processing.email_parser import EmailParseError, parse_inbound_email
 from app.providers.imap import InboxClient, InboxConnectionError
 from app.services.email_ingestion import EmailAnalysisFailed, EmailIngestionService
+from app.services.stored_telegram_notification import EmailNotificationFailed
+
+
+class EmailNotificationSink(Protocol):
+    def notify(self, email_id: UUID) -> bool: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -20,10 +27,12 @@ class InboxSyncService:
         inbox: InboxClient,
         ingestion: EmailIngestionService,
         monitored_address: str,
+        notification: EmailNotificationSink | None = None,
     ) -> None:
         self._inbox = inbox
         self._ingestion = ingestion
         self._monitored_address = monitored_address
+        self._notification = notification
 
     def sync(self) -> InboxSyncSummary:
         raw_messages = self._inbox.fetch_unread()
@@ -53,6 +62,13 @@ class InboxSyncService:
                 processed += 1
             else:
                 duplicates += 1
+
+            if self._notification is not None and outcome.status == "analyzed":
+                try:
+                    self._notification.notify(outcome.email_id)
+                except EmailNotificationFailed:
+                    failed += 1
+                    continue
 
             try:
                 self._inbox.mark_seen(raw.uid)
