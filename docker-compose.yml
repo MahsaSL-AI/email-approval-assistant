@@ -25,7 +25,7 @@ services:
   email-worker:
     profiles: ["automation"]
     build: .
-    command: ["python", "scripts/run_email_worker.py"]
+    command: ["python", "-m", "scripts.run_email_worker"]
     env_file: .env
     environment:
       DATABASE_URL: postgresql+psycopg://email_assistant:email_assistant@db:5432/email_assistant
@@ -36,7 +36,7 @@ services:
   telegram-bot:
     profiles: ["automation"]
     build: .
-    command: ["python", "scripts/run_telegram_bot.py"]
+    command: ["python", "-m", "scripts.run_telegram_bot"]
     env_file: .env
     environment:
       DATABASE_URL: postgresql+psycopg://email_assistant:email_assistant@db:5432/email_assistant
