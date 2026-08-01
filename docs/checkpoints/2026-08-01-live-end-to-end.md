@@ -39,3 +39,20 @@ without duplication.
 
 No credentials, email addresses, message bodies, Telegram IDs, or SMTP IDs are
 recorded in this checkpoint.
+
+## Independent-account delivery verification
+
+A second live test used a separate sender account and a unique body marker so
+only the intended unread message was selected. The target was parsed without
+errors, stored once, analyzed, and notified to Telegram. The operator approved
+the proposed reply and independently confirmed that it arrived in the sending
+account.
+
+Database reconciliation confirmed:
+
+- the source sender differed from the monitored Gmail account;
+- reply status was `sent`;
+- `sent_at` and the reserved SMTP Message-ID were present;
+- no failure reason was stored;
+- exactly one `reply_sent` processing event existed;
+- the Telegram edit session was cleared.

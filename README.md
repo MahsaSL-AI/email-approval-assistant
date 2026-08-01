@@ -25,7 +25,7 @@ Telegram bot on 2026-08-01:
 - conversational editing without commands or email UUIDs;
 - unlimited revision rounds that remain `editing`;
 - explicit Approve & Send followed by guarded Gmail SMTP delivery;
-- live receipt of the self-addressed test reply in Gmail;
+- live receipt of both self-addressed and independent-account test replies;
 - persistent Telegram offsets and edit sessions across restarts;
 - automatic Telegram polling retry after transient network failures;
 - 120 automated tests, Ruff lint, formatting, and Python compilation checks.
