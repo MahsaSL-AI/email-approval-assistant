@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 
+from app.api.routes.delivery import router as delivery_router
 from app.api.routes.emails import router as emails_router
 from app.api.routes.health import router as health_router
 from app.api.routes.inbox import router as inbox_router
@@ -17,6 +18,7 @@ def create_app() -> FastAPI:
     application.include_router(inbox_router)
     application.include_router(emails_router)
     application.include_router(replies_router)
+    application.include_router(delivery_router)
     return application
 
 
