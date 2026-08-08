@@ -28,7 +28,17 @@ Telegram bot on 2026-08-01:
 - live receipt of both self-addressed and independent-account test replies;
 - persistent Telegram offsets and edit sessions across restarts;
 - automatic Telegram polling retry after transient network failures;
-- 120 automated tests, Ruff lint, formatting, and Python compilation checks.
+- 121 automated tests, Ruff lint, formatting, and Python compilation checks.
+
+## Demo evidence
+
+The screenshots below are generated from the local FastAPI application and do
+not contain Gmail addresses, Telegram identities, credentials, or customer
+content.
+
+![Swagger API overview](docs/screenshots/api-swagger.png)
+
+![Reply workflow and guarded delivery endpoints](docs/screenshots/api-swagger-delivery.png)
 
 ## Architecture
 
@@ -225,10 +235,10 @@ workflow. The API keeps these operations separate for inspection and testing.
 .\.venv\Scripts\python.exe -m pytest -q
 .\.venv\Scripts\python.exe -m ruff check .
 .\.venv\Scripts\python.exe -m ruff format --check .
-.\.venv\Scripts\python.exe -m compileall -q app scripts alembic
+.\.venv\Scripts\python.exe -m compileall -q app tests scripts alembic
 ```
 
-Latest verified result: **120 passed**, with one upstream Starlette TestClient
+Latest verified result: **121 passed**, with one upstream Starlette TestClient
 deprecation warning.
 
 Detailed implementation checkpoints are available in
