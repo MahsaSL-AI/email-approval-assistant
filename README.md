@@ -1,5 +1,8 @@
 # AI Email Approval Assistant
 
+[![CI](https://github.com/mahsasl26-ui/email-approval-assistant/actions/workflows/ci.yml/badge.svg)](https://github.com/mahsasl26-ui/email-approval-assistant/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 A production-minded, human-in-the-loop email automation MVP. It polls a Gmail
 inbox, extracts and analyzes new messages, sends a structured review to one
 authorized Telegram operator, and delivers a reply through SMTP only after an
@@ -257,3 +260,7 @@ API endpoints, tests, Docker, and documentation.
 Not included: attachments, multiple inboxes or operators, Gmail API push events,
 a web dashboard, queues, RAG, calendar actions, or production OAuth deployment.
 These are roadmap items, not hidden dependencies of the MVP.
+
+## License
+
+This project is available under the [MIT License](LICENSE).
