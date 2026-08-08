@@ -32,11 +32,15 @@ Telegram bot on 2026-08-01:
 
 ## Demo evidence
 
-The screenshots below are generated from the local FastAPI application and do
-not contain Gmail addresses, Telegram identities, credentials, or customer
-content.
+The screenshots below combine the local API with a live synthetic Gmail and
+Telegram demo. They do not expose Gmail addresses, the Telegram chat list,
+credentials, or customer content.
 
 ![Swagger API overview](docs/screenshots/api-swagger.png)
+
+![Live conversational edit and approval in the Telegram bot](docs/screenshots/telegram-edit-approval-safe.png)
+
+![Targeted synthetic email received in Gmail](docs/screenshots/gmail-demo-inbound.png)
 
 ![Reply workflow and guarded delivery endpoints](docs/screenshots/api-swagger-delivery.png)
 
