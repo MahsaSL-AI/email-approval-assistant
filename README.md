@@ -1,6 +1,6 @@
 # AI Email Approval Assistant
 
-[![CI](https://github.com/mahsasl26-ui/email-approval-assistant/actions/workflows/ci.yml/badge.svg)](https://github.com/mahsasl26-ui/email-approval-assistant/actions/workflows/ci.yml)
+[![CI](https://github.com/MahsaSL-AI/email-approval-assistant/actions/workflows/ci.yml/badge.svg)](https://github.com/MahsaSL-AI/email-approval-assistant/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 A production-minded, human-in-the-loop email automation MVP. It polls a Gmail
